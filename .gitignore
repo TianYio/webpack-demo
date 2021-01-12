@@ -1,1 +1,10 @@
 /dist/
+/node_modules/
+/yarn-error.log
+/yarn.lock
+/package-lock.json
+/.idea/workspace.xml
+/.idea/webpack.iml
+/.idea/vcs.xml
+/.idea/modules.xml
+/.idea/codeStyles/codeStyleConfig.xml
