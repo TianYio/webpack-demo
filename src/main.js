@@ -1,16 +1,26 @@
 import './assets/style/index.css';
-// import '@babel/polyfill'
-// document.write('print by main.js');
 
-const add = (x, y) => x + y;
+console.log('main.js 加载');
+/* const add = function add(x, y) {
+ return x + y;
+ };
 
-console.log(add(2, 5));
+ console.log(add(2, 5));
+ const promise = new Promise((resolve) => {
+ console.log('new Promise at resolve');
+ setTimeout(() => {
+ console.log('定时器执行完了 ~');
+ resolve();
+ }, 0);
+ });
+ console.log(promise);
+ */
 
-const promise = new Promise(resolve => {
-  console.log('new Promise at resolve');
-  setTimeout(() => {
-    console.log('定时器执行完了 ~');
-    resolve();
-  }, 0);
+import(
+/* webpackChunkName:'math' */
+  './math.js'
+).then((res) => {
+  console.log(res);
+}).catch((e) => {
+  console.log(e);
 });
-console.log(promise);
