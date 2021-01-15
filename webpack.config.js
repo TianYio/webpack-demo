@@ -1,10 +1,14 @@
 const { resolve } = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
+
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCssAssetsWebpackPlugin = require(
   'optimize-css-assets-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const AddAssetHtmlWebpackPlugin = require('add-asset-html-webpack-plugin');
 const WorkboxWebpackPlugin = require('workbox-webpack-plugin');
+
 process.env.NODE_ENV = 'production';
 /*
  * 缓存：
@@ -25,18 +29,13 @@ process.env.NODE_ENV = 'production';
  * 2、"sideEffects":["*.css"]//设置不进行tree shaking 的文件
  * */
 /*
- * 代码分割
- * optimization->splitChunks->chunk
- * 在js中通过import(/webpackChunkNameL:'name'/)动态引入，该文件就会单独打包了
- * */
-/*
  * 懒加载 和 预加载
  * 懒加载 import(/webpackChunkName:'name'/)
  * 预加载 import(/webpackChunkName:'name',webpackPrefetch:true/)，慎用在移动端和一些老版本浏览器上有兼容性问题
  * */
 /*
- * PWA渐进式网络开发应用程序（离线可访问）
- * workbox-->workbox-webpack-plugin
+ * Dll
+ *
  * */
 module.exports = {
   mode: 'production',
@@ -73,12 +72,7 @@ module.exports = {
         test: /\.js$/,
         exclude: /node_modules/,
         use: [
-          {
-            loader: 'eslint-loader',
-            options: {
-              fix: true,//自动修复eslint错误
-            },
-          },
+          'thread-loader',
           {
             loader: 'babel-loader',
             options: {
@@ -95,41 +89,77 @@ module.exports = {
               cacheDirectory: true,//开启babel缓存，第二次构建时，会读取之前的缓存
             },
           },
+          {
+            loader: 'eslint-loader',
+            options: {
+              fix: true,//自动修复eslint错误
+            },
+          },
         ],
 
+      },
+      {
+        test: /\.(gif|png:jpg|jpeg|ico)$/,
+        use: [
+          {
+            loader: 'url-loader',
+            options: {
+              esModule: false,
+            },
+          },
+        ],
       },
     ],
   },
   plugins: [
-    // 生成html文件
-    new HtmlWebpackPlugin({
-      template: './src/index.html',
-      minify: { //压缩HTML代码
-        collapseWhitespace: true,//压缩空格
-        removeComments: true,//移除注释
-      },
-      // filename:'index.[hash:8].html'
-    }),
+    new CleanWebpackPlugin(),
     // 提取css文件为单独文件，从js中分离
     new MiniCssExtractPlugin({
       filename: 'assets/style/main.[contenthash:8].css',
     }),
     // 压缩css文件
     new OptimizeCssAssetsWebpackPlugin(),
-    new CleanWebpackPlugin(),
-    /*new WorkboxWebpackPlugin.GenerateSW({
-     /!*
-     * 1、帮助serviceWorker快速启动
-     * 2、删除旧的serviceWorker配置文件
-     * -->生成一个 serviceWorker配置文件
-     * *!/
-     clientsClaim: true,
-     skipWaiting: true,
+    /*
+     * PWA渐进式网络开发应用程序（离线可访问）
+     * workbox-->workbox-webpack-plugin
+     * */
+    new WorkboxWebpackPlugin.GenerateSW({
+      /*
+       * 1、帮助serviceWorker快速启动
+       * 2、删除旧的serviceWorker配置文件
+       * -->生成一个 serviceWorker配置文件
+       * */
+      clientsClaim: true,
+      skipWaiting: true,
+    }),
+    // 生成html文件
+    new HtmlWebpackPlugin({
+      title: 'Webpack App',
+      template: './src/index.html',
+      inject: 'body',
+      scriptLoading: 'defer',
+      minify: { //压缩HTML代码
+        collapseWhitespace: true,//压缩空格
+        removeComments: true,//移除注释
+      },
+      // filename:'index.[hash:8].html'
+    }),
+    new webpack.DllReferencePlugin({
+      context: resolve(__dirname),
+      manifest: resolve(__dirname, 'dll/manifest.json'),
+    }),
+    /* new AddAssetHtmlWebpackPlugin({
+     filepath: resolve(__dirname, 'dll/!*.dll.js'),
      }),*/
   ],
   /*
    * 将node_modules中的代码单独打包成一个chunk输出
    * 自动分析多入口chunk中有没有公众的依赖/文件，如果有会打包成单独一个chunk
+   * */
+  /*
+   * 代码分割
+   * optimization->splitChunks->chunk
+   * 在js中通过import(/webpackChunkNameL:'name'/)动态引入，该文件就会单独打包了
    * */
   optimization: {
     splitChunks: {

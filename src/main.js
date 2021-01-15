@@ -24,3 +24,13 @@ import(
 }).catch((e) => {
   console.log(e);
 });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').then(() => {
+      console.log('sw ok');
+    }).catch(() => {
+      console.log('sw loss');
+    });
+  });
+}
